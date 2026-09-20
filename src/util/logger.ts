@@ -52,3 +52,7 @@ export function out(text: string): void {
 export function isVerbose(): boolean {
   return level === 'verbose';
 }
+
+export function isQuiet(): boolean {
+  return level === 'quiet';
+}

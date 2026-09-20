@@ -719,8 +719,8 @@ per-PR CI; the report header states that the run was incremental and against wha
 | M0 **done** | Scaffold: package.json, tsconfig, vitest, `bin/`, `--version/--help` | `npx .` prints help; build and lint clean |
 | M1 **done** | Config layer + provider registry + `--provider/--key/--clear-key/--clear-credentials/--show-config/--init` | key round-trips through `~/.isojevdit/credentials.json` with restricted permissions, save and clear both print the path, precedence unit-tested against a temp HOME |
 | M2 **done** | Discovery + ignore layers + chunking + packing + `--estimate` | on a fixture, `.vscode`/`.config` are skipped, `--explain-ignores` names the rule, and the file/chunk/token/cost table prints with zero API calls |
-| M3 *adapter done* | OpenRouter adapter + engine + cache, **3 checks only** | real findings from `test/fixtures/php-shop`; cached re-run costs $0; cassettes recorded |
-| M4 | Findings model + Markdown/JSON reporters + KB for those 3 checks | `iso-jevdit-report.md` survives a read-aloud review; golden snapshot stable |
+| M3 *engine done; cache pending* | OpenRouter adapter + engine + cache, **3 checks only** | engine sends concurrent requests and records partial tool errors; cache and live cassettes remain |
+| M4 *initial reporter done* | Findings model + Markdown/JSON reporters + KB for those 3 checks | reports and CLI summary work; dedupe, waivers, localization, and golden snapshot remain |
 | M5 | Full catalog (~36) + KB + threshold/chunk-size tuning from the recall harness | precision/recall table committed; shipped defaults justified by it |
 | M6 | Localization pass | fixture findings land within ±12 lines of truth, or are marked approximate |
 | M7 | Repo-scope checks + waivers + `--changed` + `--fail-on` | a CI-shaped run on a fixture gates correctly |

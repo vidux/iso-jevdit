@@ -45,6 +45,10 @@ describe('flag parsing', () => {
     expect(parseArgs(['--concurrency', 'eight']).errors.join()).toContain('needs a number');
   });
 
+  it('accepts a custom report path', () => {
+    expect(parseArgs(['--out', 'artifacts/audit.md']).values.get('out')).toBe('artifacts/audit.md');
+  });
+
   it('does not let a number flag swallow the next option', () => {
     const parsed = parseArgs(['--concurrency', '--verbose']);
     expect(parsed.errors.join()).toContain('"--concurrency" needs a value');
