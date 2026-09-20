@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+*.tgz
+
+# tool output and local state
+iso-jevdit-report.md
+iso-jevdit-report.json
+.isojevdit/cache/
+.isojevdit/credentials.json
+
+#test key
+.claude/test_openrouter_key.txt
