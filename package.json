@@ -1,20 +1,52 @@
 {
   "name": "iso-jevdit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ISO/IEC 27001:2022 Annex A audit for your codebase, powered by TypeSafe's Jev decision model on OpenRouter",
-  "keywords": ["iso27001", "iso-27001", "audit", "compliance", "security", "sast", "annex-a", "openrouter", "jev"],
+  "keywords": [
+    "iso27001",
+    "iso-27001",
+    "audit",
+    "compliance",
+    "security",
+    "sast",
+    "annex-a",
+    "openrouter",
+    "jev"
+  ],
   "license": "MIT",
   "author": "Viduranga <https://github.com/vidux>",
-  "repository": { "type": "git", "url": "git+https://github.com/vidux/iso-jevdit.git" },
-  "bugs": { "url": "https://github.com/vidux/iso-jevdit/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vidux/iso-jevdit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vidux/iso-jevdit/issues"
+  },
   "homepage": "https://github.com/vidux/iso-jevdit#readme",
   "type": "module",
-  "engines": { "node": ">=20.3.0" },
-  "bin": { "iso-jevdit": "bin/iso-jevdit.mjs" },
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "bin": {
+    "iso-jevdit": "bin/iso-jevdit.mjs"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["bin", "dist", "README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "LICENSE"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx src/cli.ts",
