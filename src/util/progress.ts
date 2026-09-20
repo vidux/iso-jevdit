@@ -2,6 +2,7 @@ import { colors } from './logger.js';
 
 const FRAME_MS = 80;
 const BAR_WIDTH = 24;
+const MIN_BAR_WIDTH = 6;
 
 /**
  * A single line that rewrites itself on a terminal, and stays silent when output is piped or quiet -
@@ -27,13 +28,18 @@ export class Progress {
 
   private compose(label: string, done: number, total?: number): string {
     const c = colors();
+    const columns = Math.max(20, (process.stderr.columns ?? 120) - 1);
     if (total === undefined || total <= 0) {
-      return `${c.cyan(label)} ${c.dim(String(done))}`;
+      const suffix = ` ${done}`;
+      return `${c.cyan(fitText(label, columns - suffix.length))}${c.dim(suffix)}`;
     }
     const ratio = Math.max(0, Math.min(1, done / total));
-    const filled = Math.round(ratio * BAR_WIDTH);
-    const bar = '█'.repeat(filled) + '░'.repeat(BAR_WIDTH - filled);
-    return `${c.cyan(label)} ${c.dim(bar)} ${done}/${total}`;
+    const count = `${done}/${total}`;
+    const barWidth = Math.max(MIN_BAR_WIDTH, Math.min(BAR_WIDTH, Math.floor(columns * 0.2)));
+    const filled = Math.round(ratio * barWidth);
+    const bar = '█'.repeat(filled) + '░'.repeat(barWidth - filled);
+    const suffix = ` ${bar} ${count}`;
+    return `${c.cyan(fitText(label, columns - suffix.length))}${c.dim(suffix)}`;
   }
 
   private paint(line: string): void {
@@ -64,4 +70,14 @@ const ANSI = /\u001b\[[0-9;]*m/g;
 
 export function stripAnsi(text: string): string {
   return text.replace(ANSI, '');
+}
+
+/** Keeps both ends visible because progress labels put counters first and the active file last. */
+export function fitText(text: string, width: number): string {
+  if (width <= 0) return '';
+  if (text.length <= width) return text.padEnd(width);
+  if (width <= 3) return '.'.repeat(width);
+  const left = Math.ceil((width - 3) / 2);
+  const right = Math.floor((width - 3) / 2);
+  return `${text.slice(0, left)}...${text.slice(text.length - right)}`;
 }

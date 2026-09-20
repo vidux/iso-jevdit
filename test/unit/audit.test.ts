@@ -10,6 +10,7 @@ import type { Check } from '../../src/checks/types.js';
 import { DEFAULT_SETTINGS } from '../../src/config/schema.js';
 import type { DecisionProvider } from '../../src/providers/types.js';
 import { renderMarkdownReport } from '../../src/report/markdown.js';
+import { writeReports } from '../../src/report/write.js';
 import type { Chunk } from '../../src/scan/chunk.js';
 import type { DiscoveryResult } from '../../src/scan/discover.js';
 
@@ -211,5 +212,65 @@ describe('audit engine and report', () => {
       currentChunk: 'src/good.ts:1-1',
       message: 'rate-limit: waiting 10s before retry 1/4',
     });
+  });
+
+  it('replaces existing Markdown and JSON reports', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'iso-jevdit-report-'));
+    tempDirs.push(root);
+    const result = await runEngine({
+      chunks,
+      files: ['src/bad.ts', 'src/good.ts'],
+      checks,
+      settings: DEFAULT_SETTINGS,
+      provider: provider(),
+    });
+    const markdownPath = path.join(root, 'iso-jevdit-report.md');
+    const jsonPath = path.join(root, 'iso-jevdit-report.json');
+    await fs.writeFile(markdownPath, 'old markdown');
+    await fs.writeFile(jsonPath, 'old json');
+
+    await writeReports({
+      result,
+      settings: DEFAULT_SETTINGS,
+      checks,
+      provider: {
+        name: 'test',
+        model: 'test-model',
+        baseUrl: 'https://example.test',
+        timeoutMs: 1000,
+        maxRetries: 0,
+        headers: {},
+        apiKeyEnv: 'TEST_KEY',
+        defaults: {
+          baseUrl: 'https://example.test',
+          model: 'test-model',
+          transport: 'decisions',
+          contextTokens: 32_000,
+          pricing: { inputPerMTok: 1, outputPerMTok: 0 },
+          apiKeyEnv: 'TEST_KEY',
+          decisionsPath: '/decisions',
+          keyCheckPath: '/key',
+          keyHint: 'https://example.test/key',
+          timeoutMs: 1000,
+          maxRetries: 0,
+        },
+      },
+      root,
+      targetPath: root,
+      discovery: {
+        root,
+        files: [],
+        skips: [],
+        counts: { eligible: 2, ignoredDirs: 0, ignoredFiles: 0, tooLarge: 0, notEligible: 0, skipRecordsOmitted: 0 },
+        explicitFile: false,
+      },
+      readSkips: [],
+      git: null,
+      version: '0.1.2',
+    });
+
+    expect(await fs.readFile(markdownPath, 'utf8')).toContain('# ISO/IEC 27001:2022 Annex A Source Audit');
+    expect(await fs.readFile(markdownPath, 'utf8')).not.toContain('old markdown');
+    expect(JSON.parse(await fs.readFile(jsonPath, 'utf8'))).toMatchObject({ stats: { totalFiles: 2 } });
   });
 });
