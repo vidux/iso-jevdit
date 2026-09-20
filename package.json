@@ -1,0 +1,35 @@
+{
+  "name": "iso-jevdit",
+  "version": "0.1.0",
+  "description": "ISO/IEC 27001:2022 Annex A audit for your codebase, powered by TypeSafe's Jev decision model on OpenRouter",
+  "keywords": ["iso27001", "iso-27001", "audit", "compliance", "security", "sast", "annex-a", "openrouter", "jev"],
+  "license": "MIT",
+  "author": "Viduranga <https://github.com/vidux>",
+  "type": "module",
+  "engines": { "node": ">=20.3.0" },
+  "bin": { "iso-jevdit": "bin/iso-jevdit.mjs" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["bin", "dist", "README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:record": "ISO_JEVDIT_RECORD=1 vitest run test/live",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "ignore": "^7.0.5",
+    "picocolors": "^1.1.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
