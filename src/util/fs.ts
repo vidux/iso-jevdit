@@ -27,7 +27,7 @@ export async function writeFileAtomic(file: string, data: string, mode?: number)
   } catch (err) {
     // Windows can transiently refuse the replace while a scanner holds the target open.
     const code = (err as NodeJS.ErrnoException).code;
-    if (code !== 'EPERM' && code !== 'EACCES' && code !== 'EBUSY') {
+    if (code !== 'EPERM' && code !== 'EACCES' && code !== 'EBUSY' && code !== 'EEXIST') {
       await fs.rm(tmp, { force: true });
       throw err;
     }

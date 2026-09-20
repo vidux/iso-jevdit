@@ -5,6 +5,7 @@ import { buildEstimate } from '../../src/audit/estimate.js';
 import { CATALOG } from '../../src/checks/catalog/index.js';
 import { DEFAULT_SETTINGS } from '../../src/config/schema.js';
 import type { Chunk } from '../../src/scan/chunk.js';
+import { fitText } from '../../src/util/progress.js';
 
 describe('flag parsing', () => {
   it('accepts --flag=value and --flag value', () => {
@@ -121,5 +122,14 @@ describe('cost forecast', () => {
     expect(estimate.skippedChunks).toBe(1);
     expect(estimate.requests).toBe(0);
     expect(estimate.costUsd).toBe(0);
+  });
+});
+
+describe('progress display', () => {
+  it('fits a long status onto one terminal line while preserving both ends', () => {
+    const fitted = fitText('Audit files 15/278 folder app/Classes/Web file app/Classes/Web/CategoryList.php', 40);
+    expect(fitted).toHaveLength(40);
+    expect(fitted).toMatch(/^Audit files/);
+    expect(fitted).toMatch(/CategoryList\.php$/);
   });
 });

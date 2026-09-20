@@ -192,7 +192,7 @@ export async function runAudit(opts: AuditOptions): Promise<ExitCode> {
         }
         const currentFile = event.currentFiles?.join(', ') ?? 'preparing';
         progress.update(
-          `Audit  folder ${event.currentFolder ?? '.'}  file ${currentFile}  files ${event.stats.processedFiles}/${event.stats.totalFiles}  ok ${event.stats.filesOk}  issues ${event.stats.filesWithIssues}  requests ${event.stats.completedRequests + event.stats.failedRequests}/${event.stats.totalRequests}`,
+          `Audit  files ${event.stats.processedFiles}/${event.stats.totalFiles}  ok ${event.stats.filesOk}  issues ${event.stats.filesWithIssues}  requests ${event.stats.completedRequests + event.stats.failedRequests}/${event.stats.totalRequests}  folder ${event.currentFolder ?? '.'}  file ${currentFile}`,
           event.stats.processedChunks,
           event.stats.totalChunks,
           Boolean(event.providerEvent),
