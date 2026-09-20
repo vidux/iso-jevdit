@@ -43,6 +43,14 @@ export class Progress {
     this.lastWidth = stripAnsi(line).length;
   }
 
+  /** Prints an important event above the live line, then allows progress painting to continue. */
+  notice(line: string): void {
+    if (!this.enabled || this.finished) return;
+    process.stderr.write(`\r${' '.repeat(this.lastWidth)}\r${line}\n`);
+    this.lastWidth = 0;
+    this.lastPaint = 0;
+  }
+
   /** Clears the line and stops accepting updates. */
   done(): void {
     if (!this.enabled || this.finished) return;

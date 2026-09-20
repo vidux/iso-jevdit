@@ -19,6 +19,14 @@ export interface DecisionResponse {
   usage: Usage;
 }
 
+export interface ProviderEvent {
+  type: 'rate-limit' | 'retry';
+  attempt: number;
+  maxRetries: number;
+  waitMs: number;
+  detail: string;
+}
+
 export interface KeyCheck {
   ok: boolean;
   detail: string;
@@ -35,7 +43,7 @@ export interface DecisionProvider {
   readonly contextTokens: number;
   readonly pricing: Pricing;
   verifyKey(): Promise<KeyCheck>;
-  decide(request: DecisionRequest, opts?: { signal?: AbortSignal }): Promise<DecisionResponse>;
+  decide(request: DecisionRequest, opts?: { signal?: AbortSignal; onEvent?: (event: ProviderEvent) => void }): Promise<DecisionResponse>;
 }
 
 export function estimateCostUsd(usage: Usage, pricing: Pricing): number {
