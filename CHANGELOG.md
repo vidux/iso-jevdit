@@ -18,6 +18,21 @@ called out explicitly, because it changes what your report says about your code.
 - Repository-scope checks (supply-chain hygiene, CI gates, environment separation), waivers with
   expiry.
 
+## [0.1.3] — 2026-09-20
+
+### Changed
+
+- The live terminal status is constrained to the current terminal width, dynamically shortens its
+  progress bar, and truncates long paths in the middle so updates remain on one line instead of
+  wrapping and accumulating in the console.
+- Progress output places run counters before the current folder and file so both status and active
+  location remain visible on narrow terminals.
+
+### Fixed
+
+- Existing `iso-jevdit-report.md` and `iso-jevdit-report.json` files are now reliably replaced by
+  each new audit, including Windows filesystems that return `EEXIST` during an atomic rename.
+
 ## [0.1.2] — 2026-09-20
 
 ### Added
@@ -96,6 +111,7 @@ and says so. See the status table in [README.md](README.md).
 - The adapter speaks the wire format directly instead of using a generated SDK, because an alpha
   endpoint needs its own validation and retry policy.
 
-[unreleased]: https://github.com/vidux/iso-jevdit/compare/v0.1.2...HEAD
+[unreleased]: https://github.com/vidux/iso-jevdit/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/vidux/iso-jevdit/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/vidux/iso-jevdit/compare/v0.1.0...v0.1.2
 [0.1.0]: https://github.com/vidux/iso-jevdit/releases/tag/v0.1.0
