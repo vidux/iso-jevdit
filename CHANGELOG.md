@@ -12,14 +12,43 @@ called out explicitly, because it changes what your report says about your code.
 
 ### Planned next
 
-- The audit engine: send chunks, run requests concurrently, cache answers by content hash so an
-  unchanged re-run costs nothing.
-- `iso-jevdit-report.md` and its JSON sibling, with evidence, ISO clause mapping, remediation from the
-  knowledge base, and the scope, methodology and configuration appendices.
+- Cache answers by content hash so an unchanged re-run costs nothing.
 - Narrowing a chunk verdict to a line range by re-asking the same question about smaller slices.
 - The remaining ~33 checks, and the thresholds tuned against fixture repositories.
 - Repository-scope checks (supply-chain hygiene, CI gates, environment separation), waivers with
-  expiry, and `--fail-on` as a CI gate.
+  expiry.
+
+## [0.1.2] — 2026-09-20
+
+### Added
+
+- Concurrent audit execution through the OpenRouter Decisions endpoint, with probability-mass
+  gating, token and actual-cost accounting, partial error handling, and the configured `failOn` CI
+  exit gate.
+- Live terminal progress showing the current folder and file, processed files, clean and affected
+  files, chunks, and request counts.
+- Markdown and JSON reports with an executive summary, severity counts, control coverage, evidence,
+  reviewed remediation, clean checks, tool errors, scope totals, methodology, and effective config.
+- Atomic recovery state at `.isojevdit/last-run.json`, recording the last folder, file, chunk,
+  counters, provider status, and final report paths if a terminal closes or a run is interrupted.
+- `--out <file>` for selecting the Markdown report path; the JSON sibling uses the same base name.
+
+### Changed
+
+- HTTP 429 responses now print a visible rate-limit notice, wait at least 10 seconds (or longer when
+  `Retry-After` requires it), and retry the same request within the configured retry limit.
+- The default spending guard is now `$10` (`maxSpendUsd: 10`).
+- Small-file packing is disabled by default so a packed-chunk verdict is not attributed to unrelated
+  files before localization is available. It remains available with `chunk.pack: true`.
+- The report records only skipped-file counts instead of listing every skipped path.
+- The generated `--init` settings and README now reflect the current engine, report, recovery,
+  spending, and no-packing defaults.
+
+### Fixed
+
+- A packed request could report every member file as evidence for one positive verdict, producing
+  misleading locations such as a credential finding on a file containing no credential. Disabling
+  packing by default prevents that attribution problem until the localization pass is implemented.
 
 ## [0.1.0] — 2026-09-20
 
@@ -67,5 +96,6 @@ and says so. See the status table in [README.md](README.md).
 - The adapter speaks the wire format directly instead of using a generated SDK, because an alpha
   endpoint needs its own validation and retry policy.
 
-[unreleased]: https://github.com/vidux/iso-jevdit/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/vidux/iso-jevdit/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/vidux/iso-jevdit/compare/v0.1.0...v0.1.2
 [0.1.0]: https://github.com/vidux/iso-jevdit/releases/tag/v0.1.0
