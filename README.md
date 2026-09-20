@@ -41,6 +41,12 @@ statistics, prints a final summary, and writes `iso-jevdit-report.md` plus a JSO
 locations are approximate chunk ranges until localization lands. `--estimate` remains a no-network
 cost preflight.
 
+During a run, the live line includes the current folder and file. If OpenRouter returns HTTP 429,
+the CLI prints `Rate limit detected`, waits at least 10 seconds (or longer when `Retry-After` asks
+for it), and retries. Recoverable status is written atomically to `.isojevdit/last-run.json`, including
+the last folder, file, chunk, counters, rate-limit state, and final report paths. If the terminal is
+closed or the process is interrupted, that file remains as the last known run state.
+
 Follow [CHANGELOG.md](CHANGELOG.md) for what lands when.
 
 ---
@@ -116,7 +122,7 @@ Forecast  (--estimate: no API calls made)
   requests   80
   tokens     920.4K input  (state 600.1K + questions 320.3K)
   cost       $0.0387   band $0.0290 - $0.0483
-  budget     maxSpendUsd $1.00
+  budget     maxSpendUsd $10.00
 ```
 
 Happy with the number? Drop `--estimate`.
@@ -165,7 +171,7 @@ matter most:
 | Setting | Effect |
 |---|---|
 | `chunk.maxTokens` (default 8000) | Bigger chunks → fewer requests → cheaper. Too big and a single violation can get lost in the volume. |
-| `chunk.pack` (default true) | Packs small files from the same directory into one request. Usually the single biggest saving. |
+| `chunk.pack` (default false) | Opt-in cost saving that packs small files together. Keep it off for exact per-file attribution until localization is available. |
 
 For a 400-file, 2.4 MB repository with a full catalog of ~35 checks:
 
@@ -178,7 +184,7 @@ For a 400-file, 2.4 MB repository with a full catalog of ~35 checks:
 Guard rails:
 
 - `--estimate` prints the forecast and makes no API calls.
-- `maxSpendUsd` (default `1.0`) aborts before a run can exceed it — exit code 5. Raise it with
+- `maxSpendUsd` (default `10.0`) aborts before a run can exceed it — exit code 5. Raise it with
   `--max-spend`.
 - Token counts are estimates with a ±25% band, because Jev's tokenizer is not published. Runs
   reconcile against the usage each response reports.
@@ -245,7 +251,7 @@ Comments and trailing commas are allowed in `settings.json`.
   "chunk": {
     "maxTokens": 8000,
     "overlapLines": 20,          // carried into the next chunk so a straddling issue is still visible
-    "pack": true,
+    "pack": false,
     "packSameDirOnly": true
   },
 
@@ -269,7 +275,7 @@ Comments and trailing commas are allowed in `settings.json`.
 
   // ── Run behaviour ──────────────────────────────────────────────────────────
   "concurrency": 4,
-  "maxSpendUsd": 1.0,
+  "maxSpendUsd": 10.0,
 
   // ── Accepted today, acted on when the audit engine lands ───────────────────
   "localize": { "enabled": true, "slices": 3, "maxDepth": 2, "minLines": 12 },

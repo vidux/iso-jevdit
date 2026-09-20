@@ -6,6 +6,7 @@ export const CONFIG_DIR_NAME = '.isojevdit';
 export const SETTINGS_FILE_NAME = 'settings.json';
 export const CREDENTIALS_FILE_NAME = 'credentials.json';
 export const SCHEMA_FILE_NAME = 'schema.json';
+export const RUN_STATUS_FILE_NAME = 'last-run.json';
 
 /** ISO_JEVDIT_HOME exists so tests never touch a real user's credentials. */
 export function isoJevditHome(): string {

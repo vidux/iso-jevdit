@@ -167,14 +167,9 @@ export function renderMarkdownReport(opts: MarkdownReportOptions): string {
   lines.push(
     '## Appendix A — Scope',
     '',
-    `Eligible files: ${opts.discovery.files.length}. Discovery skips: ${opts.discovery.counts.ignoredFiles} ignored files, ${opts.discovery.counts.ignoredDirs} ignored directories, ${opts.discovery.counts.tooLarge} oversized files, and ${opts.discovery.counts.notEligible} files of non-audited types.`,
+    `Eligible files: ${opts.discovery.files.length}. Skipped: ${opts.discovery.counts.ignoredFiles} ignored files, ${opts.discovery.counts.ignoredDirs} ignored directories, ${opts.discovery.counts.tooLarge} oversized files, ${opts.discovery.counts.notEligible} files of non-audited types, and ${opts.readSkips.length} files rejected while reading or chunking.`,
     '',
   );
-  const skipLines = [
-    ...opts.discovery.skips.map((skip) => `- \`${skip.path}\` — ${skip.layer ? `${skip.layer}: ${skip.rule ?? skip.kind}` : (skip.detail ?? skip.kind)}`),
-    ...opts.readSkips.map((skip) => `- \`${skip.path}\` — ${skip.kind}${skip.detail ? `: ${skip.detail}` : ''}`),
-  ];
-  lines.push(...(skipLines.length > 0 ? skipLines : ['No eligible file was skipped after discovery.']), '');
 
   lines.push(
     '## Appendix B — Controls not assessable from source',

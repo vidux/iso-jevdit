@@ -26,6 +26,12 @@ const SETTINGS_TEMPLATE = `{
   // File types to audit on top of the shipped list (which covers php, js, ts, py, go, ...).
   "extraExtensions": [],
 
+  // Keep each file in its own request by default so findings are attributed to one file.
+  // Enabling packing is cheaper, but locations remain approximate until localization runs.
+  "chunk": {
+    "pack": false
+  },
+
   // Confidence policy. "report" is the floor for a finding to appear at all;
   // at or above "high" it keeps its full severity, between the two it is demoted.
   "thresholds": {
@@ -41,7 +47,7 @@ const SETTINGS_TEMPLATE = `{
   },
 
   // Stop the run before it can spend more than this. --estimate prints the forecast.
-  "maxSpendUsd": 1.0,
+  "maxSpendUsd": 10.0,
 
   // Fail CI at this severity or worse. Use "none" to always exit 0.
   "failOn": "high"

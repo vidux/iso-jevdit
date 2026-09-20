@@ -37,6 +37,7 @@ describe('settings schema', () => {
     expect(errors).toEqual([]);
     expect(settings.provider).toBe('openrouter');
     expect(settings.chunk.maxTokens).toBe(8000);
+    expect(settings.chunk.pack).toBe(false);
     expect(settings.thresholds.report).toBe(0.6);
     expect(settings.respectGitignore).toBe(true);
   });

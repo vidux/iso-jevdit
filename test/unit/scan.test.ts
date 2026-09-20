@@ -121,8 +121,9 @@ describe('explainIgnore', () => {
 
 describe('chunking', () => {
   it('packs small files from the same directory into one state', async () => {
-    const discovery = await scan(DEFAULT_SETTINGS);
-    const { chunks } = await chunkFiles(discovery.files, { settings: DEFAULT_SETTINGS });
+    const settings = settingsWith({ chunk: { pack: true } });
+    const discovery = await scan(settings);
+    const { chunks } = await chunkFiles(discovery.files, { settings });
 
     const packed = chunks.find((c) => c.packed);
     expect(packed?.files.map((f) => f.path).sort()).toEqual(['src/Auth.php', 'src/Orders.php', 'src/Safe.php']);

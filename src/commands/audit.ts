@@ -2,6 +2,8 @@ import path from 'node:path';
 
 import { runEngine } from '../audit/engine.js';
 import { buildEstimate } from '../audit/estimate.js';
+import { RunStatusJournal } from '../audit/run-status.js';
+import type { AuditStats } from '../audit/types.js';
 import { severityAtLeast, type Check } from '../checks/types.js';
 import type { LoadedConfig } from '../config/load.js';
 import { EXIT, IsoJevditError, type ExitCode } from '../errors.js';
@@ -145,20 +147,64 @@ export async function runAudit(opts: AuditOptions): Promise<ExitCode> {
   const decisionProvider = createProvider(provider, key);
   const auditableFiles = [...new Set(chunks.flatMap((chunk) => chunk.files.map((file) => file.path)))];
   const progress = new Progress(Boolean(process.stderr.isTTY) && !isQuiet());
-  const result = await runEngine({
-    chunks,
-    files: auditableFiles,
-    checks: opts.checks,
-    settings,
-    provider: decisionProvider,
-    onProgress: ({ stats }) => {
-      progress.update(
-        `Audit  files ${stats.processedFiles}/${stats.totalFiles}  ok ${stats.filesOk}  issues ${stats.filesWithIssues}  requests ${stats.completedRequests + stats.failedRequests}/${stats.totalRequests}`,
-        stats.processedChunks,
-        stats.totalChunks,
-      );
-    },
+  const startedAt = new Date().toISOString();
+  const initialStats: AuditStats = {
+    totalFiles: auditableFiles.length,
+    processedFiles: 0,
+    filesOk: 0,
+    filesWithIssues: 0,
+    totalChunks: chunks.length,
+    processedChunks: 0,
+    totalRequests: estimate.requests,
+    completedRequests: 0,
+    failedRequests: 0,
+    findings: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    costUsd: 0,
+  };
+  const journal = new RunStatusJournal({
+    root: loaded.root,
+    target: loaded.targetPath,
+    provider: provider.name,
+    model: provider.model,
+    startedAt,
+    initialStats,
   });
+  journal.update({ stats: initialStats });
+  await journal.flush();
+
+  let result;
+  try {
+    result = await runEngine({
+      chunks,
+      files: auditableFiles,
+      checks: opts.checks,
+      settings,
+      provider: decisionProvider,
+      onProgress: (event) => {
+        journal.update(event);
+        if (event.providerEvent?.type === 'rate-limit') {
+          progress.notice(
+            `Rate limit detected. Waiting ${Math.ceil(event.providerEvent.waitMs / 1000)} seconds, then retrying ` +
+              `(${event.providerEvent.attempt}/${event.providerEvent.maxRetries}).`,
+          );
+        }
+        const currentFile = event.currentFiles?.join(', ') ?? 'preparing';
+        progress.update(
+          `Audit  folder ${event.currentFolder ?? '.'}  file ${currentFile}  files ${event.stats.processedFiles}/${event.stats.totalFiles}  ok ${event.stats.filesOk}  issues ${event.stats.filesWithIssues}  requests ${event.stats.completedRequests + event.stats.failedRequests}/${event.stats.totalRequests}`,
+          event.stats.processedChunks,
+          event.stats.totalChunks,
+          Boolean(event.providerEvent),
+        );
+      },
+    });
+  } catch (err) {
+    progress.done();
+    journal.fail((err as Error).message);
+    await journal.flush();
+    throw err;
+  }
   progress.done();
 
   const reports = await writeReports({
@@ -173,6 +219,8 @@ export async function runAudit(opts: AuditOptions): Promise<ExitCode> {
     git: await gitInfo(loaded.root),
     version: opts.version,
   });
+  journal.complete(reports.markdownPath, reports.jsonPath);
+  await journal.flush();
 
   log.blank();
   log.info('Summary');
@@ -184,6 +232,7 @@ export async function runAudit(opts: AuditOptions): Promise<ExitCode> {
   log.kv('cost', formatUsd(result.stats.costUsd));
   log.kv('report', reports.markdownPath);
   if (reports.jsonPath) log.kv('json', reports.jsonPath);
+  log.kv('status', journal.filePath);
   if (result.stats.findings === 0) log.success('No findings crossed the configured threshold.');
   else log.warn(`${result.stats.findings} finding(s) need review.`);
   if (result.toolErrors.length > 0) log.warn(`${result.toolErrors.length} tool error(s) are recorded in the report.`);

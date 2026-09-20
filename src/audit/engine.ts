@@ -4,13 +4,16 @@ import { demoteSeverity, severityRank, type Check } from '../checks/types.js';
 import type { Settings } from '../config/schema.js';
 import { normalizeAnswer, positiveProbability } from '../jev/answers.js';
 import { planRequests } from '../jev/request.js';
-import { estimateCostUsd, type DecisionProvider } from '../providers/types.js';
+import { estimateCostUsd, type DecisionProvider, type ProviderEvent } from '../providers/types.js';
 import type { Chunk } from '../scan/chunk.js';
 import type { AuditResult, AuditStats, Finding, ToolError } from './types.js';
 
 export interface EngineProgress {
   stats: Readonly<AuditStats>;
-  current?: string;
+  currentChunk?: string;
+  currentFolder?: string;
+  currentFiles?: string[];
+  providerEvent?: ProviderEvent;
 }
 
 export interface RunEngineOptions {
@@ -68,7 +71,17 @@ export async function runEngine(opts: RunEngineOptions): Promise<AuditResult> {
     }
   }
 
-  const notify = (current?: string): void => opts.onProgress?.({ stats, ...(current ? { current } : {}) });
+  const notify = (chunk?: Chunk, providerEvent?: ProviderEvent): void => {
+    const currentFiles = chunk ? [...new Set(chunk.files.map((file) => file.path))] : undefined;
+    const currentFolder = currentFiles?.[0]?.includes('/') ? currentFiles[0].slice(0, currentFiles[0].lastIndexOf('/')) : '.';
+    opts.onProgress?.({
+      stats,
+      ...(chunk ? { currentChunk: chunk.id } : {}),
+      ...(currentFolder ? { currentFolder } : {}),
+      ...(currentFiles ? { currentFiles } : {}),
+      ...(providerEvent ? { providerEvent } : {}),
+    });
+  };
   notify();
 
   let nextChunk = 0;
@@ -86,7 +99,7 @@ export async function runEngine(opts: RunEngineOptions): Promise<AuditResult> {
             model: opts.provider.model,
             state: plan.state,
             questions: plan.questions,
-          });
+          }, { onEvent: (event) => notify(chunk, event) });
           stats.completedRequests += 1;
           stats.inputTokens += response.usage.inputTokens;
           stats.outputTokens += response.usage.outputTokens;
@@ -121,7 +134,7 @@ export async function runEngine(opts: RunEngineOptions): Promise<AuditResult> {
           stats.failedRequests += 1;
           toolErrors.push({ chunkId: chunk.id, paths: chunk.files.map((file) => file.path), message: (err as Error).message });
         }
-        notify(chunk.id);
+        notify(chunk);
       }
 
       stats.processedChunks += 1;
@@ -133,7 +146,7 @@ export async function runEngine(opts: RunEngineOptions): Promise<AuditResult> {
       stats.filesWithIssues = filesWithIssues.size;
       stats.filesOk = stats.processedFiles - [...filesWithIssues].filter((file) => remainingChunks.get(file) === 0).length;
       stats.findings = findings.length;
-      notify(chunk.id);
+      notify(chunk);
     }
   };
 

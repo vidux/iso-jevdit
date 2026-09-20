@@ -8,6 +8,7 @@ export { discover, explainIgnore } from './scan/discover.js';
 export { chunkFiles } from './scan/chunk.js';
 export { buildEstimate } from './audit/estimate.js';
 export { runEngine } from './audit/engine.js';
+export { RunStatusJournal } from './audit/run-status.js';
 export type { AuditResult, AuditStats, Finding, ToolError } from './audit/types.js';
 export { normalizeAnswer, positiveProbability } from './jev/answers.js';
 export { planRequests, questionKeyFor } from './jev/request.js';

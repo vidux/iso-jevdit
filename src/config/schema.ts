@@ -65,7 +65,7 @@ export const settingsSchema = z.strictObject({
     .strictObject({
       maxTokens: z.number().int().min(500).max(28_000).default(8000),
       overlapLines: z.number().int().min(0).max(200).default(20),
-      pack: z.boolean().default(true),
+      pack: z.boolean().default(false),
       packSameDirOnly: z.boolean().default(true),
     })
     .prefault({}),
@@ -80,7 +80,7 @@ export const settingsSchema = z.strictObject({
     .prefault({}),
 
   concurrency: z.number().int().min(1).max(32).default(4),
-  maxSpendUsd: z.number().min(0).default(1),
+  maxSpendUsd: z.number().min(0).default(10),
 
   thresholds: z
     .strictObject({

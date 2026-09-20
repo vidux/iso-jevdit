@@ -3,7 +3,7 @@ import { IsoJevditError, EXIT } from '../errors.js';
 import { maskSecretsInText } from '../report/redact.js';
 import { log } from '../util/logger.js';
 import type { ProviderDefaults } from './defaults.js';
-import type { DecisionProvider, DecisionRequest, DecisionResponse, KeyCheck, Pricing, Usage } from './types.js';
+import type { DecisionProvider, DecisionRequest, DecisionResponse, KeyCheck, Pricing, ProviderEvent, Usage } from './types.js';
 
 export interface OpenRouterOptions {
   apiKey: string;
@@ -13,16 +13,19 @@ export interface OpenRouterOptions {
   maxRetries: number;
   headers: Record<string, string>;
   defaults: ProviderDefaults;
+  rateLimitWaitMs?: number;
 }
 
 const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504, 522, 524]);
 
 class RetryableError extends Error {
   readonly retryAfterMs?: number;
-  constructor(message: string, retryAfterMs?: number) {
+  readonly rateLimited: boolean;
+  constructor(message: string, retryAfterMs?: number, rateLimited = false) {
     super(message);
     this.name = 'RetryableError';
     if (retryAfterMs !== undefined) this.retryAfterMs = retryAfterMs;
+    this.rateLimited = rateLimited;
   }
 }
 
@@ -111,6 +114,7 @@ export class OpenRouterProvider implements DecisionProvider {
   private readonly maxRetries: number;
   private readonly extraHeaders: Record<string, string>;
   private readonly defaults: ProviderDefaults;
+  private readonly rateLimitWaitMs: number;
 
   constructor(opts: OpenRouterOptions) {
     this.apiKey = opts.apiKey;
@@ -120,6 +124,7 @@ export class OpenRouterProvider implements DecisionProvider {
     this.maxRetries = opts.maxRetries;
     this.extraHeaders = opts.headers;
     this.defaults = opts.defaults;
+    this.rateLimitWaitMs = opts.rateLimitWaitMs ?? 10_000;
     this.contextTokens = opts.defaults.contextTokens;
     this.pricing = opts.defaults.pricing;
   }
@@ -174,7 +179,10 @@ export class OpenRouterProvider implements DecisionProvider {
     return { ok: true, detail: parts.join(', ') };
   }
 
-  async decide(request: DecisionRequest, opts: { signal?: AbortSignal } = {}): Promise<DecisionResponse> {
+  async decide(
+    request: DecisionRequest,
+    opts: { signal?: AbortSignal; onEvent?: (event: ProviderEvent) => void } = {},
+  ): Promise<DecisionResponse> {
     const body = JSON.stringify({
       model: request.model,
       state: request.state,
@@ -184,7 +192,18 @@ export class OpenRouterProvider implements DecisionProvider {
     let lastError: Error | undefined;
     for (let attempt = 0; attempt <= this.maxRetries; attempt += 1) {
       if (attempt > 0) {
-        const wait = backoffMs(attempt - 1, lastError instanceof RetryableError ? lastError.retryAfterMs : undefined);
+        const retryable = lastError instanceof RetryableError ? lastError : undefined;
+        const rateLimited = retryable?.rateLimited === true;
+        const wait = rateLimited
+          ? Math.max(this.rateLimitWaitMs, retryable?.retryAfterMs ?? 0)
+          : backoffMs(attempt - 1, retryable?.retryAfterMs);
+        opts.onEvent?.({
+          type: rateLimited ? 'rate-limit' : 'retry',
+          attempt,
+          maxRetries: this.maxRetries,
+          waitMs: wait,
+          detail: lastError?.message ?? 'unknown provider error',
+        });
         log.detail(`retry ${attempt}/${this.maxRetries} in ${Math.round(wait)}ms (${lastError?.message ?? 'unknown'})`);
         await new Promise((resolve) => setTimeout(resolve, wait));
       }
@@ -209,7 +228,11 @@ export class OpenRouterProvider implements DecisionProvider {
         }
         if (RETRYABLE_STATUS.has(response.status)) {
           const text = await response.text().catch(() => '');
-          throw new RetryableError(`${response.status} ${shortBody(text)}`, parseRetryAfter(response.headers.get('retry-after')));
+          throw new RetryableError(
+            `${response.status} ${shortBody(text)}`,
+            parseRetryAfter(response.headers.get('retry-after')),
+            response.status === 429,
+          );
         }
         if (!response.ok) {
           const text = await response.text().catch(() => '');
