@@ -598,8 +598,13 @@ exceed the model's 32,000-token window. Shorten the context or lower `chunk.maxT
 - [CHANGELOG.md](CHANGELOG.md) — what changed, and what is coming
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development setup, and how to add a check
 - [SECURITY.md](SECURITY.md) — reporting a vulnerability, and how this tool handles your data
-- `.claude/PLAN.md` in the repository — the full design of record, including decisions and trade-offs
+- [.claude/PLAN.md](https://github.com/vidux/iso-jevdit/blob/main/.claude/PLAN.md) — the full design of record, including decisions and trade-offs
+
+## Support
+
+- Questions and bug reports: [github.com/vidux/iso-jevdit/issues](https://github.com/vidux/iso-jevdit/issues)
+- Security problems: see [SECURITY.md](SECURITY.md) — please do not open a public issue
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © [vidux](https://github.com/vidux)

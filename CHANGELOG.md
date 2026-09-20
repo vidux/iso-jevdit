@@ -66,3 +66,6 @@ and says so. See the status table in [README.md](README.md).
   decisions only, so remediation advice is reviewed text rather than generated text.
 - The adapter speaks the wire format directly instead of using a generated SDK, because an alpha
   endpoint needs its own validation and retry policy.
+
+[unreleased]: https://github.com/vidux/iso-jevdit/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/vidux/iso-jevdit/releases/tag/v0.1.0

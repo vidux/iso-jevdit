@@ -16,9 +16,12 @@ While the major version is 0, fixes land on the latest minor release only.
 
 **Please do not open a public issue for a security problem.**
 
-Use GitHub's private vulnerability reporting on this repository: **Security → Advisories → Report a
-vulnerability**. That opens a private thread with the maintainer and gives you a draft advisory to
-collaborate in. If that is unavailable to you, contact the maintainer listed in `package.json`.
+Use GitHub's private vulnerability reporting:
+
+**https://github.com/vidux/iso-jevdit/security/advisories/new**
+
+That opens a private thread with the maintainer and gives you a draft advisory to collaborate in. If
+it is unavailable to you, contact the maintainer listed in `package.json`.
 
 Helpful things to include:
 

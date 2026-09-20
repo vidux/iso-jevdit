@@ -7,7 +7,8 @@ repositories that expose false positives** — both are described in detail belo
 
 Read [.claude/PLAN.md](.claude/PLAN.md). It is the design of record: the architecture, the decisions
 that have already been argued through, and why. If you want to do something it rules out, that is a
-fine conversation to have — open an issue and make the case, rather than working around it in a PR.
+fine conversation to have — open an [issue](https://github.com/vidux/iso-jevdit/issues) and make the case, rather than
+working around it in a PR.
 
 Then read the one section of [CLAUDE.md](CLAUDE.md) titled *"Jev is not a chat model"*. Everything
 else in this repository is ordinary Node tooling; that part is not, and it is easy to write plausible
@@ -18,7 +19,7 @@ code that is completely wrong.
 Node.js 20.3 or newer (`AbortSignal.any` sets the floor).
 
 ```bash
-git clone <this repository>
+git clone https://github.com/vidux/iso-jevdit.git
 cd iso-jevdit
 npm install
 npm test
