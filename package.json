@@ -1,6 +1,6 @@
 {
   "name": "iso-jevdit",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "ISO/IEC 27001:2022 Annex A audit for your codebase, powered by TypeSafe's Jev decision model on OpenRouter",
   "keywords": [
     "iso27001",
