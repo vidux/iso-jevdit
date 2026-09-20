@@ -1,21 +1,26 @@
 import path from 'node:path';
 
+import { runEngine } from '../audit/engine.js';
 import { buildEstimate } from '../audit/estimate.js';
-import type { Check } from '../checks/types.js';
+import { severityAtLeast, type Check } from '../checks/types.js';
 import type { LoadedConfig } from '../config/load.js';
 import { EXIT, IsoJevditError, type ExitCode } from '../errors.js';
-import { requireKey, resolveApiKey, type ResolvedProvider } from '../providers/index.js';
+import { createProvider, requireKey, resolveApiKey, type ResolvedProvider } from '../providers/index.js';
+import { writeReports } from '../report/write.js';
 import { chunkFiles } from '../scan/chunk.js';
 import { discover } from '../scan/discover.js';
-import { changedFiles } from '../util/git.js';
+import { changedFiles, gitInfo } from '../util/git.js';
 import { formatTokens, formatUsd } from '../util/tokens.js';
-import { isVerbose, log } from '../util/logger.js';
+import { isQuiet, isVerbose, log } from '../util/logger.js';
+import { Progress } from '../util/progress.js';
 
 export interface AuditOptions {
   loaded: LoadedConfig;
   checks: readonly Check[];
   provider: ResolvedProvider;
   estimateOnly: boolean;
+  version: string;
+  key?: string;
   changedRef?: string;
 }
 
@@ -133,14 +138,61 @@ export async function runAudit(opts: AuditOptions): Promise<ExitCode> {
   }
 
   // Fail on a missing credential here, where the message is actionable, rather than mid-run.
-  const resolution = await resolveApiKey(provider);
-  requireKey(provider, resolution);
+  const resolution = await resolveApiKey(provider, opts.key);
+  const key = requireKey(provider, resolution);
   log.detail(`credential resolved from ${resolution.describe}`);
 
-  log.warn('the decision engine is not wired up yet, so no report was written.');
-  log.info('  Implemented so far: discovery, ignore layers, chunking, packing, cost forecast,');
-  log.info('  credential storage, and the check catalog. Next milestone: decisions and the report.');
-  log.info('  Everything above is real output from this run - re-run with --estimate to skip this notice.');
+  const decisionProvider = createProvider(provider, key);
+  const auditableFiles = [...new Set(chunks.flatMap((chunk) => chunk.files.map((file) => file.path)))];
+  const progress = new Progress(Boolean(process.stderr.isTTY) && !isQuiet());
+  const result = await runEngine({
+    chunks,
+    files: auditableFiles,
+    checks: opts.checks,
+    settings,
+    provider: decisionProvider,
+    onProgress: ({ stats }) => {
+      progress.update(
+        `Audit  files ${stats.processedFiles}/${stats.totalFiles}  ok ${stats.filesOk}  issues ${stats.filesWithIssues}  requests ${stats.completedRequests + stats.failedRequests}/${stats.totalRequests}`,
+        stats.processedChunks,
+        stats.totalChunks,
+      );
+    },
+  });
+  progress.done();
+
+  const reports = await writeReports({
+    result,
+    settings,
+    checks: opts.checks,
+    provider,
+    root: loaded.root,
+    targetPath: loaded.targetPath,
+    discovery,
+    readSkips,
+    git: await gitInfo(loaded.root),
+    version: opts.version,
+  });
+
   log.blank();
+  log.info('Summary');
+  log.kv('files', `${result.stats.processedFiles}/${result.stats.totalFiles} processed`);
+  log.kv('clean', String(result.stats.filesOk));
+  log.kv('issues', `${result.stats.filesWithIssues} files, ${result.stats.findings} findings`);
+  log.kv('requests', `${result.stats.completedRequests}/${result.stats.totalRequests} completed, ${result.stats.failedRequests} failed`);
+  log.kv('usage', `${formatTokens(result.stats.inputTokens)} input, ${formatTokens(result.stats.outputTokens)} output`);
+  log.kv('cost', formatUsd(result.stats.costUsd));
+  log.kv('report', reports.markdownPath);
+  if (reports.jsonPath) log.kv('json', reports.jsonPath);
+  if (result.stats.findings === 0) log.success('No findings crossed the configured threshold.');
+  else log.warn(`${result.stats.findings} finding(s) need review.`);
+  if (result.toolErrors.length > 0) log.warn(`${result.toolErrors.length} tool error(s) are recorded in the report.`);
+  log.blank();
+
+  if (result.stats.totalRequests > 0 && result.stats.completedRequests === 0) return EXIT.credential;
+  const failOn = settings.failOn;
+  if (failOn !== 'none') {
+    if (result.findings.some((finding) => severityAtLeast(finding.severity, failOn))) return EXIT.findings;
+  }
   return EXIT.ok;
 }

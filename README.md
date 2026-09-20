@@ -22,7 +22,7 @@ iso-jevdit src/auth/token.php                         # audit a single file
 
 ## Status
 
-**This is version 0.1.0 and the audit engine is not finished.** Being straight about it, because a
+**This is version 0.1.1 and the audit engine is still being expanded.** Being straight about it, because a
 compliance tool that overstates itself is worse than useless:
 
 | Area | State |
@@ -32,12 +32,14 @@ compliance tool that overstates itself is worse than useless:
 | Chunking, small-file packing, `--estimate` cost forecast | **Working** |
 | Check catalog | **Working**, 3 of ~36 checks written |
 | Request building, answer parsing, the OpenRouter adapter | **Working** |
-| Sending chunks, caching, narrowing findings to line ranges | **Not yet** |
-| Writing `iso-jevdit-report.md` | **Not yet** |
+| Sending chunks and collecting live run statistics | **Working** |
+| Writing Markdown and JSON reports | **Working** |
+| Caching and narrowing findings to line ranges | **Not yet** |
 
-Today, `iso-jevdit .` discovers and chunks your code, forecasts the cost, checks your credential,
-and then tells you the engine is not wired up. `--estimate` is fully useful right now. The only
-network call the tool makes today is verifying a key when you save one.
+Today, `iso-jevdit .` discovers and chunks your code, calls Jev, shows live file/request/finding
+statistics, prints a final summary, and writes `iso-jevdit-report.md` plus a JSON sibling. Finding
+locations are approximate chunk ranges until localization lands. `--estimate` remains a no-network
+cost preflight.
 
 Follow [CHANGELOG.md](CHANGELOG.md) for what lands when.
 
@@ -426,7 +428,14 @@ iso-jevdit [path]                      file or directory to audit; default is th
 
 **Output**
 
-`--verbose` / `-v`, `--quiet`, `--no-color`, `--version`, `--help` / `-h`.
+| Flag | Meaning |
+|---|---|
+| `--out <file>` | Markdown report path; the JSON sibling uses the same base name |
+| `--verbose` / `-v` | Show per-file detail and retries |
+| `--quiet` | Print errors only |
+| `--no-color` | Disable color output |
+| `--version` | Print the version |
+| `--help` / `-h` | Print command help |
 
 Diagnostics go to stderr; results (`--show-config`, `--list-checks`, `--explain-ignores`) go to
 stdout, so you can pipe them.

@@ -50,6 +50,7 @@ const FLAGS: FlagSpec[] = [
   { name: 'concurrency', kind: 'number', group: 'Run', placeholder: '<n>', help: 'parallel requests' },
   { name: 'chunk-tokens', kind: 'number', group: 'Run', placeholder: '<n>', help: 'token budget per chunk' },
 
+  { name: 'out', kind: 'string', group: 'Output', placeholder: '<file>', help: 'Markdown report path' },
   { name: 'verbose', kind: 'boolean', group: 'Output', help: 'show per-file detail and retries' },
   { name: 'quiet', kind: 'boolean', group: 'Output', help: 'errors only' },
   { name: 'color', kind: 'boolean', group: 'Output', help: '--no-color disables colour' },
@@ -171,7 +172,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   return { positionals, values, errors };
 }
 
-function packageVersion(): string {
+export function packageVersion(): string {
   try {
     const require = createRequire(import.meta.url);
     return (require('../package.json') as { version: string }).version;
@@ -244,6 +245,7 @@ export async function main(argv: readonly string[]): Promise<ExitCode> {
   if (typeof values.get('max-spend') === 'number') overrides.maxSpendUsd = values.get('max-spend');
   if (typeof values.get('threshold') === 'number') overrides.thresholds = { report: values.get('threshold') };
   if (typeof values.get('chunk-tokens') === 'number') overrides.chunk = { maxTokens: values.get('chunk-tokens') };
+  if (typeof values.get('out') === 'string') overrides.report = { out: values.get('out') };
   if (values.get('gitignore') === false) overrides.respectGitignore = false;
   if (Array.isArray(values.get('ignore'))) overrides.ignore = values.get('ignore');
   if (Array.isArray(values.get('ignore-dir'))) overrides.ignoreDirs = values.get('ignore-dir');
@@ -332,6 +334,8 @@ export async function main(argv: readonly string[]): Promise<ExitCode> {
     checks,
     provider,
     estimateOnly: values.get('estimate') === true,
+    version: packageVersion(),
+    ...(typeof keyFlag === 'string' && keyFlag !== '-' ? { key: keyFlag } : {}),
     ...(changedFlag !== undefined ? { changedRef: typeof changedFlag === 'string' ? changedFlag : 'HEAD' } : {}),
   });
 }

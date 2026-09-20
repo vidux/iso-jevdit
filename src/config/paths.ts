@@ -53,8 +53,14 @@ function isSameDirectory(a: string, b: string): boolean {
  */
 export function findProjectConfigDir(startDir: string): string | undefined {
   const userDir = path.resolve(isoJevditHome());
+  const home = path.resolve(os.homedir());
   let current = path.resolve(startDir);
   for (;;) {
+    // The search stops at the home directory. A `.isojevdit` there is the user-level config, not a
+    // project, and anything above it belongs to no project at all - so the scan root can never
+    // escape into the home directory and drag the report and the ignore rules with it.
+    if (isSameDirectory(current, home)) return undefined;
+
     const candidate = path.join(current, CONFIG_DIR_NAME);
     try {
       if (fs.statSync(candidate).isDirectory() && !isSameDirectory(candidate, userDir)) return candidate;
