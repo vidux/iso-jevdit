@@ -22,7 +22,7 @@ iso-jevdit src/auth/token.php                         # audit a single file
 
 ## Status
 
-**This is version 0.1.1 and the audit engine is still being expanded.** Being straight about it, because a
+**This is version 0.1.2 and the audit engine is still being expanded.** Being straight about it, because a
 compliance tool that overstates itself is worse than useless:
 
 | Area | State |
